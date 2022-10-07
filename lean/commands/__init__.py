@@ -28,6 +28,7 @@ from lean.commands.logs import logs
 from lean.commands.optimize import optimize
 from lean.commands.report import report
 from lean.commands.research import research
+from lean.commands.update_project import update_project
 from lean.commands.whoami import whoami
 
 lean.add_command(config)
@@ -41,6 +42,7 @@ lean.add_command(whoami)
 lean.add_command(init)
 lean.add_command(create_project)
 lean.add_command(delete_project)
+lean.add_command(update_project)
 lean.add_command(backtest)
 lean.add_command(optimize)
 lean.add_command(research)

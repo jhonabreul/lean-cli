@@ -31,6 +31,7 @@ from lean.components.util.platform_manager import PlatformManager
 from lean.components.util.xml_manager import XMLManager
 from lean.constants import PROJECT_CONFIG_FILE_NAME
 from lean.models.api import QCLanguage, QCProject
+from lean.models.errors import MoreInfoError
 from lean.models.utils import LeanLibraryReference
 
 
@@ -145,6 +146,22 @@ class ProjectManager:
             target_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source_file, target_file)
 
+    def check_path_is_valid_project(self, project_dir: Path) -> None:
+        """Checks if the path is a valid Lean CLI project.
+
+        It will raise a MoreInfoError if the path is not a valid project directory.
+
+        :param project_dir: Path to a project directory
+        """
+        project_config = self._project_config_manager.try_get_project_config(project_dir, self._path_manager)
+
+        if project_config:
+            project_language = project_config.get("algorithm-language", None)
+
+        if not project_config or project_language is None:
+            raise MoreInfoError(f"{project_dir} is not a Lean CLI project",
+                                "https://www.lean.io/docs/v2/lean-cli/projects/project-management#02-Create-Projects")
+
     def create_new_project(self, project_dir: Path, language: QCLanguage) -> None:
         """Creates a new project directory and fills it with some useful files.
 
@@ -178,6 +195,19 @@ class ProjectManager:
             shutil.rmtree(project_dir)
         except FileNotFoundError:
             raise RuntimeError(f"Failed to delete project. Could not find the specified path {project_dir}.")
+
+    def rename_project(self, project_dir: Path, new_name: str) -> Path:
+        """Renames a project by renaming the directory.
+
+        It will raise an exception if either the passed directory is not a valid project directory
+        or if the new name is not a valid directory name.
+
+        :param project_dir: Path to the project to be renamed
+        :param new_name: New name to be assigned to the project
+        :return The new path of the project
+        """
+        self.check_path_is_valid_project(project_dir)
+        return Path.cwd() / project_dir.rename(new_name)
 
     def get_projects_by_name_or_id(self, cloud_projects: List[QCProject],
                                    project: Optional[Union[str, int]]) -> List[QCProject]:

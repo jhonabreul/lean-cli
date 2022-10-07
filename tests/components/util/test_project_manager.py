@@ -29,6 +29,7 @@ from lean.components.util.project_manager import ProjectManager
 from lean.components.util.xml_manager import XMLManager
 from lean.container import container
 from lean.models.api import QCLanguage
+from lean.models.errors import MoreInfoError
 from tests.test_helpers import create_fake_lean_cli_directory
 
 
@@ -519,3 +520,60 @@ def test_get_project_libraries() -> None:
     assert len(libraries) == 2
     assert python_library_dir in libraries
     assert csharp_library_dir in libraries
+
+
+def test_checks_project_directory_is_valid() -> None:
+    create_fake_lean_cli_directory()
+
+    project_manager = _create_project_manager()
+
+    # Valid projects, should not raise
+    project_manager.check_path_is_valid_project(Path.cwd() / "Python Project")
+    project_manager.check_path_is_valid_project(Path.cwd() / "Library/Python Library")
+
+    # Not a project, should raise
+    with pytest.raises(MoreInfoError):
+        project_manager.check_path_is_valid_project(Path.cwd())
+
+
+@pytest.mark.parametrize("project", ["Python Project", "Library/Python Library"])
+def test_renames_project(project: str) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / project
+    new_project_name = "SomeProject"
+    if project.startswith("Library/"):
+        new_project_name = "Library/" + new_project_name
+
+    expected_new_project_dir = Path.cwd() / new_project_name
+    assert not expected_new_project_dir.exists()
+
+    project_dir_files = [file.name for file in project_dir.iterdir()]
+
+    project_manager = _create_project_manager()
+    new_project_dir = project_manager.rename_project(project_dir, new_project_name)
+
+    assert expected_new_project_dir == new_project_dir
+    assert not project_dir.exists()
+    assert new_project_dir.exists()
+
+    new_project_dir_files = [file.name for file in new_project_dir.iterdir()]
+    assert new_project_dir_files == project_dir_files
+
+
+@pytest.mark.parametrize("project", ["Python Project", "Library/Python Library"])
+def test_rename_project_fails_with_new_invalid_name(project: str) -> None:
+    create_fake_lean_cli_directory()
+
+    project_dir = Path.cwd() / project
+    new_project_name = "SomeDirectory/SomeProject"
+    if project.startswith("Library/"):
+        new_project_name = "Library/" + new_project_name
+    new_project_dir = Path.cwd() / new_project_name
+
+    assert not new_project_dir.exists()
+
+    project_manager = _create_project_manager()
+
+    with pytest.raises(FileNotFoundError):
+        project_manager.rename_project(project_dir, new_project_name)

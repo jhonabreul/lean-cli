@@ -119,3 +119,6 @@ MODULE_CLOUD_PLATFORM = "cloud"
 
 # List pending datasets
 LIST_PENDING_DATASETS = environ.get("LIST_PENDING_DATASETS", "false").lower() == "true"
+
+# Set by `lean ui` in the commands it runs, which have no terminal and are stopped with Ctrl+Break on Windows
+UI_COMMAND_ENV_VAR = "LEAN_UI_COMMAND"

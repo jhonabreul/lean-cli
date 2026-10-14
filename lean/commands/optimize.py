@@ -19,7 +19,7 @@ from click import command, argument, option, IntRange
 
 from lean.click import LeanCommand, PathParameter, ensure_options, CaseInsensitiveChoice
 from lean.components.docker.lean_runner import LeanRunner
-from lean.constants import DEFAULT_ENGINE_IMAGE
+from lean.constants import DEFAULT_ENGINE_IMAGE, OUTPUT_DIRECTORY_NAME_FORMAT
 from lean.container import container
 from lean.models.api import QCParameter, QCBacktest
 from lean.models.click_options import options_from_json, get_configs_for_options
@@ -42,14 +42,14 @@ def _get_latest_backtest_runtime(algorithm_directory: Path) -> timedelta:
 
     def is_backtest_output_directory(path: Path) -> bool:
         try:
-            datetime.strptime(path.name, "%Y-%m-%d_%H-%M-%S")
+            datetime.strptime(path.name, OUTPUT_DIRECTORY_NAME_FORMAT)
         except ValueError:
             return False
         else:
             return path.is_dir()
 
     def get_filename_timestamp(path: Path) -> datetime:
-        return datetime.strptime(path.name, "%Y-%m-%d_%H-%M-%S")
+        return datetime.strptime(path.name, OUTPUT_DIRECTORY_NAME_FORMAT)
 
     backtests_directories = [f for f in backtests_directory.iterdir() if is_backtest_output_directory(f)]
     latest_backtest_directory = max(backtests_directories, key=get_filename_timestamp, default=None)
@@ -219,7 +219,7 @@ def optimize(project: Path,
         latest_backtest_runtime = _get_latest_backtest_runtime(algorithm_file.parent)
 
     if output is None:
-        output = algorithm_file.parent / "optimizations" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        output = algorithm_file.parent / "optimizations" / datetime.now().strftime(OUTPUT_DIRECTORY_NAME_FORMAT)
 
     optimizer_config_manager = container.optimizer_config_manager
     config = None

@@ -39,6 +39,7 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     from os import listdir, path
     from json import loads
     from datetime import datetime, timezone
+    from lean.constants import OUTPUT_DIRECTORY_NAME_FORMAT
 
     cloud_last_time = datetime.min.replace(tzinfo=timezone.utc)
 
@@ -63,7 +64,7 @@ def _get_last_portfolio(api_client: APIClient, project_id: str, project_name: Pa
     local_last_time = datetime.min.replace(tzinfo=timezone.utc)
     live_deployment_path = f"{project_name}/live"
     if path.isdir(live_deployment_path):
-        local_deployment_time = [datetime.strptime(subdir, "%Y-%m-%d_%H-%M-%S").astimezone().astimezone(timezone.utc) for subdir in listdir(live_deployment_path)]
+        local_deployment_time = [datetime.strptime(subdir, OUTPUT_DIRECTORY_NAME_FORMAT).astimezone().astimezone(timezone.utc) for subdir in listdir(live_deployment_path)]
         if local_deployment_time:
             local_last_time = sorted(local_deployment_time, reverse = True)[0]
 
